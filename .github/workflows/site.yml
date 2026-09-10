@@ -1,0 +1,29 @@
+name: site
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run build --workspace=site
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          wranglerVersion: 4.124.0
+          apiToken: ${{ secrets.CF_TOKEN }}
+          accountId: ${{ vars.CF_ACCOUNT_ID }}
+          command: >-
+            pages deploy site/build/client --project-name=jsx-traits
+            --branch=${{ contains(github.ref_name, '-next.') && 'next' ||
+            'latest' }}

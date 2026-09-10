@@ -1,0 +1,13 @@
+**/cjs/
+**/esm/
+**/types/
+.react-router/
+.wireit/
+coverage/
+docs/api/
+node_modules/
+site/build/
+temp/
+package-lock.json
+packages/react/src/index.type-test.tsx
+poc/

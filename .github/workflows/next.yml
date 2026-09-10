@@ -1,0 +1,93 @@
+name: next
+
+on:
+  pull_request:
+    types: [opened, synchronize, edited, reopened]
+    branches: [next]
+
+concurrency:
+  group: next-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  title:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: deepakputhraya/action-pr-title@v1.0.2
+        with:
+          allowed_prefixes: "fix:,feat:,breaking:,misc:"
+          prefix_case_sensitive: true
+          regex: "^[A-Za-z]+: \\S.*$"
+          github_token: ${{ github.token }}
+
+  commitlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: wagoid/commitlint-github-action@v6
+        with:
+          configFile: .commitlintrc.json
+
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run lint
+
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  typescript:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ["5.9", "latest", "next"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm install --no-save typescript@${{ matrix.version }}
+      - run: npm run typecheck --workspace=@jsx-traits/react
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run docs
+      - name: Check generated API documentation
+        run: |
+          if [[ -n $(git status --porcelain docs/api) ]]; then
+            echo 'API documentation is out of sync. Run "npm run docs" and commit it.'
+            git status --porcelain docs/api
+            exit 1
+          fi

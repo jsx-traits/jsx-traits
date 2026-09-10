@@ -1,0 +1,59 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":reviewer(nsaunders)"],
+  "baseBranches": ["next"],
+  "labels": ["dependencies"],
+  "prConcurrentLimit": 1,
+  "prHourlyLimit": 1,
+  "minimumReleaseAge": "3 days",
+  "commitMessageAction": "update",
+  "commitMessageTopic": "{{lowercase depName}}",
+  "commitMessageExtra": "to v{{lowercase newVersion}}",
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["configMigration"],
+      "commitMessagePrefix": "misc:",
+      "prTitle": "misc: migrate renovate configuration"
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "commitMessagePrefix": "breaking:",
+      "automerge": false
+    },
+    {
+      "matchPackageNames": [
+        "@microsoft/api-documenter",
+        "@microsoft/api-extractor"
+      ],
+      "enabled": false
+    },
+    {
+      "matchPackagePatterns": ["^@jsx-traits/"],
+      "enabled": false
+    },
+    {
+      "matchDepTypes": ["devDependencies"],
+      "commitMessagePrefix": "misc:"
+    },
+    {
+      "matchFileNames": ["!(packages/**/package.json)"],
+      "commitMessagePrefix": "misc:"
+    },
+    {
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "dependencies",
+      "schedule": ["before 5am on saturday"],
+      "commitMessagePrefix": "misc:"
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "enabled": false
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "addLabels": ["security"],
+    "commitMessagePrefix": "fix:",
+    "automerge": false
+  }
+}

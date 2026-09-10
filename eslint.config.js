@@ -1,0 +1,93 @@
+// @ts-check
+
+import eslint from "@eslint/js";
+import prettierConfig from "eslint-config-prettier/flat";
+import importPlugin from "eslint-plugin-import";
+import react from "eslint-plugin-react";
+import importSortPlugin from "eslint-plugin-simple-import-sort";
+import unusedImportPlugin from "eslint-plugin-unused-imports";
+import tseslint from "typescript-eslint";
+
+export default tseslint.config(
+  eslint.configs.recommended,
+  ...tseslint.configs.recommended,
+  {
+    ignores: [
+      "**/cjs/**",
+      "**/esm/**",
+      "**/types/**",
+      "coverage/**",
+      "docs/api/**",
+      "**/node_modules/**",
+      "poc/**",
+      "site/.react-router/**",
+      "site/build/**",
+      "temp/**",
+    ],
+  },
+  {
+    plugins: {
+      import: importPlugin,
+      "simple-import-sort": importSortPlugin,
+      "unused-imports": unusedImportPlugin,
+    },
+    rules: {
+      "@typescript-eslint/consistent-type-imports": [
+        "error",
+        { prefer: "type-imports", disallowTypeAnnotations: true },
+      ],
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unused-vars": "off",
+      "import/consistent-type-specifier-style": "error",
+      "import/extensions": ["error", "ignorePackages"],
+      "import/first": "error",
+      "import/newline-after-import": "error",
+      "import/no-absolute-path": "error",
+      "import/no-amd": "error",
+      "import/no-default-export": "error",
+      "import/no-duplicates": "error",
+      "import/no-extraneous-dependencies": [
+        "error",
+        {
+          devDependencies: true,
+          peerDependencies: true,
+          optionalDependencies: false,
+        },
+      ],
+      "import/no-mutable-exports": "error",
+      "import/no-named-default": "error",
+      "import/no-self-import": "error",
+      "import/prefer-default-export": "off",
+      "simple-import-sort/imports": "error",
+      "unused-imports/no-unused-imports": "error",
+      "unused-imports/no-unused-vars": [
+        "error",
+        {
+          vars: "all",
+          varsIgnorePattern: "^_",
+          args: "after-used",
+          argsIgnorePattern: "^_",
+        },
+      ],
+    },
+  },
+  {
+    files: ["eslint.config.js", "**/*.config.ts", "site/src/routes.ts"],
+    rules: { "import/no-default-export": "off" },
+  },
+  {
+    files: ["site/**"],
+    rules: { "import/no-default-export": "off" },
+  },
+  {
+    files: ["**/*.tsx"],
+    languageOptions: { parserOptions: { ecmaFeatures: { jsx: true } } },
+    settings: { react: { version: "detect" } },
+    plugins: { react },
+    rules: {
+      ...react.configs.recommended.rules,
+      ...react.configs["jsx-runtime"].rules,
+    },
+  },
+  prettierConfig,
+);

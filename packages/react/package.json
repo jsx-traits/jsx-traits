@@ -1,0 +1,80 @@
+{
+  "name": "@jsx-traits/react",
+  "description": "JSX Traits for React",
+  "version": "0.0.0",
+  "author": "Nick Saunders",
+  "license": "MIT",
+  "private": false,
+  "type": "module",
+  "sideEffects": false,
+  "files": [
+    "cjs",
+    "esm",
+    "types",
+    "tsdoc-metadata.json",
+    "!**/*.test.*",
+    "!**/*.type-test.*"
+  ],
+  "main": "./cjs/index.js",
+  "module": "./esm/index.js",
+  "types": "./types/index.d.ts",
+  "exports": {
+    ".": {
+      "@jsx-traits/source": "./src/index.ts",
+      "types": "./types/index.d.ts",
+      "import": "./esm/index.js",
+      "require": "./cjs/index.js"
+    }
+  },
+  "peerDependencies": {
+    "react": ">=19 <20"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "vitest": "^5.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jsx-traits/jsx-traits.git",
+    "directory": "packages/react"
+  },
+  "scripts": {
+    "build": "wireit",
+    "prepublishOnly": "wireit",
+    "test": "vitest run",
+    "typecheck": "tsc --project tsconfig.json --noEmit"
+  },
+  "wireit": {
+    "apix": {
+      "command": "api-extractor run",
+      "dependencies": [
+        "build"
+      ]
+    },
+    "build": {
+      "command": "tsc && tsc --project tsconfig.cjs.json && node -e \"require('node:fs').writeFileSync('cjs/package.json', JSON.stringify({type:'commonjs'}))\"",
+      "files": [
+        "src/**/*.ts",
+        "src/**/*.tsx",
+        "tsconfig*.json"
+      ],
+      "output": [
+        "cjs/**",
+        "esm/**",
+        "types/**"
+      ]
+    },
+    "prepublishOnly": {
+      "dependencies": [
+        "build"
+      ]
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

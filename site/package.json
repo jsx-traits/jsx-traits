@@ -1,0 +1,40 @@
+{
+  "name": "site",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "wireit",
+    "dev": "react-router dev",
+    "prepare": "wireit",
+    "typecheck": "tsc --build"
+  },
+  "wireit": {
+    "build": {
+      "command": "tsc --build && NODE_ENV=production react-router build",
+      "dependencies": [
+        "../packages/react:build"
+      ]
+    },
+    "prepare": {
+      "command": "react-router typegen"
+    }
+  },
+  "dependencies": {
+    "@react-router/node": "^8.0.0",
+    "isbot": "^5.1.29"
+  },
+  "devDependencies": {
+    "@jsx-traits/react": "0.0.0",
+    "@react-router/dev": "^8.0.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-markdown": "^10.1.0",
+    "react-router": "^8.0.0",
+    "remark-gfm": "^4.0.1",
+    "vite": "^8.0.0",
+    "yaml": "^2.8.1"
+  }
+}
