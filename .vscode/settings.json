@@ -1,6 +1,14 @@
 {
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "eslint.useFlatConfig": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.formatOnSave": true,
-  "eslint.useFlatConfig": true,
-  "typescript.tsdk": "node_modules/typescript/lib"
+  "javascript.preferences.importModuleSpecifierEnding": "js",
+  "typescript.preferences.importModuleSpecifierEnding": "js",
+  "javascript.preferences.importModuleSpecifier": "relative",
+  "typescript.preferences.importModuleSpecifier": "relative",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "js/ts.tsdk.path": "node_modules/typescript/lib"
 }
