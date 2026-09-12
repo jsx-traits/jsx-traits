@@ -87,16 +87,38 @@ function leaksContext(
 const invalidFinalOutput = <traits.a of={[{ leaksContext }]} />;
 
 function requiresHref(
-  input: React.JSX.IntrinsicElements["a"] & { href: string },
+  input: { href: string },
   _props: object,
 ) {
-  return input;
+  const { href: _href } = input;
+  return {};
 }
 
 const requiredInitialInput = <traits.a of={[{ requiresHref }]} href="#" />;
 
 // @ts-expect-error The first trait requires an initial href.
 const missingInitialInput = <traits.a of={[{ requiresHref }]} />;
+
+function acceptsOptionalHref(input: { href?: string }, _props: object) {
+  const { href: _href } = input;
+  return {};
+}
+
+const invalidInitialInputTag = (
+  <traits.div
+    // @ts-expect-error href is not a valid initial input for a div.
+    of={[{ acceptsOptionalHref }]}
+  />
+);
+
+function addsRef(input: React.HTMLAttributes<HTMLElement>, _props: object) {
+  return {
+    ...input,
+    ref: (_element: HTMLElement | null) => {},
+  };
+}
+
+const reusableHtmlRef = <traits.span of={[{ addsRef }]} />;
 
 // @ts-expect-error src is not a valid anchor or first-trait input prop.
 const invalidIntrinsicProp = <traits.a of={[{ button }, { tooltip }]} button:variant="primary" tooltip:content="Details" src="image.png" />;
@@ -114,5 +136,7 @@ void [
   invalidFinalOutput,
   requiredInitialInput,
   missingInitialInput,
+  invalidInitialInputTag,
+  reusableHtmlRef,
   invalidIntrinsicProp,
 ];

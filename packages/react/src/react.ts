@@ -12,6 +12,8 @@ import { executeTraits, resolveTraits } from "./core.ts";
 type IntrinsicTag = keyof React.JSX.IntrinsicElements;
 type IntrinsicProps<Tag extends IntrinsicTag> =
   React.JSX.IntrinsicElements[Tag];
+type IntrinsicPropKeys<Tag extends IntrinsicTag = IntrinsicTag> =
+  Tag extends IntrinsicTag ? keyof IntrinsicProps<Tag> : never;
 type NonEmptyTraitEntries = readonly [TraitEntry, ...TraitEntry[]];
 type TraitEntries = readonly [] | NonEmptyTraitEntries;
 type StringKey<Value> = Extract<keyof Value, string>;
@@ -83,6 +85,18 @@ type StrictPropSubset<From, To> = From extends object
     : false
   : false;
 
+type ValidInitialInput<From, To> = From extends object
+  ? Exclude<keyof From, keyof To | `data-${string}`> extends infer ExtraKeys
+    ? Extract<ExtraKeys, IntrinsicPropKeys> extends never
+      ? [Pick<From, Extract<keyof From, keyof To>>] extends [
+          Pick<To, Extract<keyof From, keyof To>>,
+        ]
+        ? true
+        : false
+      : false
+    : false
+  : false;
+
 type ValidateChain<
   Entries extends TraitEntries,
   FinalProps,
@@ -106,6 +120,18 @@ type InitialInput<Entries extends TraitEntries> = Entries extends readonly [
   ? TraitInput<EntryTrait<First>>
   : unknown;
 
+type ValidateInitialInput<
+  Entries extends TraitEntries,
+  IntrinsicProps,
+> = Entries extends readonly [infer First, ...unknown[]]
+  ? ValidInitialInput<
+      TraitInput<EntryTrait<First>>,
+      IntrinsicProps
+    > extends true
+    ? unknown
+    : never
+  : unknown;
+
 type TraitElementProps<
   Tag extends IntrinsicTag,
   Entries extends TraitEntries,
@@ -113,6 +139,7 @@ type TraitElementProps<
   of: Entries &
     ValidateEntries<Entries> &
     ValidateUniqueNamespaces<Entries> &
+    ValidateInitialInput<Entries, IntrinsicProps<Tag>> &
     ValidateChain<Entries, IntrinsicProps<Tag>>;
 } & PipelineTraitProps<Entries> &
   Omit<

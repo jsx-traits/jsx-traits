@@ -8,7 +8,7 @@ export const meta: Route.MetaFunction = () => [
 ];
 
 function emphasis(
-  input: React.JSX.IntrinsicElements["span"],
+  input: React.HTMLAttributes<HTMLElement>,
   options: { tone: "violet" | "blue" },
 ) {
   return { ...input, className: `trait-${options.tone}` };
