@@ -62,6 +62,23 @@ type ValidateEntry<Entry> = [keyof Entry] extends [never]
         : unknown
     : never;
 
+type RequiredKeys<Value> = Value extends object
+  ? {
+      [Key in keyof Value]-?: object extends Pick<Value, Key> ? never : Key;
+    }[keyof Value]
+  : never;
+
+type IncompatiblePropKeys<From, To> = {
+  [Key in Extract<keyof From, keyof To>]-?: [From[Key]] extends [To[Key]]
+    ? never
+    : Key;
+}[Extract<keyof From, keyof To>];
+
+type InvalidFinalPropKeys<From, To> =
+  | Exclude<keyof From, keyof To | `data-${string}`>
+  | IncompatiblePropKeys<From, To>
+  | Exclude<RequiredKeys<To>, keyof From>;
+
 type StrictPropSubset<From, To> = From extends object
   ? "key" extends keyof From
     ? false
@@ -72,16 +89,13 @@ type StrictPropSubset<From, To> = From extends object
       : false
   : false;
 
-type RequiredKeys<Value> = Value extends object
-  ? {
-      [Key in keyof Value]-?: object extends Pick<Value, Key> ? never : Key;
-    }[keyof Value]
-  : never;
-
 type InvalidInitialInputKeys<From, To> = Extract<
   Exclude<keyof From, keyof To | `data-${string}`>,
   IntrinsicPropKeys | RequiredKeys<From>
 >;
+
+type InvalidInitialPropKeys<From, To> =
+  InvalidInitialInputKeys<From, To> | IncompatiblePropKeys<From, To>;
 
 type ValidInitialInput<From, To> = From extends object
   ? "key" extends keyof From
@@ -95,11 +109,22 @@ type ValidInitialInput<From, To> = From extends object
       : false
   : false;
 
-declare const traitValidationError: unique symbol;
-
 type TraitValidationError<Message extends string> = {
-  readonly [traitValidationError]: Message;
+  readonly [Error in `JSX Traits error: ${Message}`]: never;
 };
+
+type FinalEntryError<
+  Tag extends IntrinsicTag,
+  Entry,
+  InvalidProp extends string = Extract<
+    InvalidFinalPropKeys<TraitOutput<EntryTrait<Entry>>, IntrinsicProps<Tag>>,
+    string
+  >,
+> = "key" extends keyof TraitOutput<EntryTrait<Entry>>
+  ? TraitValidationError<`Trait "${StringKey<Entry>}" cannot return React's reserved "key" prop`>
+  : [InvalidProp] extends [never]
+    ? TraitValidationError<`Trait "${StringKey<Entry>}" does not return valid <${Extract<Tag, string>}> props`>
+    : TraitValidationError<`Trait "${StringKey<Entry>}" returns invalid <${Extract<Tag, string>}> prop "${InvalidProp}"`>;
 
 type FinalEntryValidation<
   Tag extends IntrinsicTag,
@@ -111,10 +136,21 @@ type FinalEntryValidation<
       IntrinsicProps<Tag>
     > extends true
     ? unknown
-    : "key" extends keyof TraitOutput<EntryTrait<Entry>>
-      ? TraitValidationError<`Trait "${StringKey<Entry>}" cannot return React's reserved "key" prop`>
-      : TraitValidationError<`Trait "${StringKey<Entry>}" does not return valid <${Extract<Tag, string>}> props`>
+    : FinalEntryError<Tag, Entry>
   : unknown;
+
+type InitialEntryError<
+  Tag extends IntrinsicTag,
+  Entry,
+  InvalidProp extends string = Extract<
+    InvalidInitialPropKeys<TraitInput<EntryTrait<Entry>>, IntrinsicProps<Tag>>,
+    string
+  >,
+> = "key" extends keyof TraitInput<EntryTrait<Entry>>
+  ? TraitValidationError<`Trait "${StringKey<Entry>}" cannot accept React's reserved "key" prop as initial input`>
+  : [InvalidProp] extends [never]
+    ? TraitValidationError<`Trait "${StringKey<Entry>}" cannot accept initial <${Extract<Tag, string>}> props`>
+    : TraitValidationError<`Trait "${StringKey<Entry>}" cannot accept initial <${Extract<Tag, string>}> prop "${InvalidProp}"`>;
 
 type EntryBoundaryValidation<
   Tag extends IntrinsicTag,
@@ -128,9 +164,7 @@ type EntryBoundaryValidation<
       IntrinsicProps<Tag>
     > extends true
     ? FinalEntryValidation<Tag, Entry, Rest>
-    : "key" extends keyof TraitInput<EntryTrait<Entry>>
-      ? TraitValidationError<`Trait "${StringKey<Entry>}" cannot accept React's reserved "key" prop as initial input`>
-      : TraitValidationError<`Trait "${StringKey<Entry>}" cannot accept initial <${Extract<Tag, string>}> props`>
+    : InitialEntryError<Tag, Entry>
   : [PreviousOutput] extends [TraitInput<EntryTrait<Entry>>]
     ? FinalEntryValidation<Tag, Entry, Rest>
     : TraitValidationError<`Trait "${StringKey<Entry>}" cannot accept the previous trait's output`>;
