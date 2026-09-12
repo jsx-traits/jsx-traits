@@ -20,7 +20,7 @@ jobs:
   source:
     runs-on: ubuntu-latest
     steps:
-      - name: Require next branch
+      - name: check
         run: |
           if [ "${{ github.event.pull_request.head.ref }}" != "next" ]; then
             echo "PRs to 'latest' must come from 'next'."
