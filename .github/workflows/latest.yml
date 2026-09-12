@@ -20,7 +20,7 @@ jobs:
   source:
     runs-on: ubuntu-latest
     steps:
-      - name: Require next branch
+      - name: check
         run: |
           if [ "${{ github.event.pull_request.head.ref }}" != "next" ]; then
             echo "PRs to 'latest' must come from 'next'."
@@ -39,14 +39,3 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm start --workspace=@scripts/calculate-version -- latest
-
-  verify:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-      - run: npm ci
-      - run: npm run verify

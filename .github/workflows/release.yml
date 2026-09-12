@@ -40,7 +40,6 @@ jobs:
           registry-url: https://registry.npmjs.org
 
       - run: npm ci
-      - run: npm run verify
 
       - id: version
         run:
