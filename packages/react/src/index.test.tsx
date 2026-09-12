@@ -63,9 +63,45 @@ describe("traits", () => {
     ).toBe('<a href="/docs" title="Read the documentation">Documentation</a>');
   });
 
+  it("passes symbol metadata between traits", () => {
+    const metadata = Symbol("metadata");
+
+    function provide(
+      input: React.HTMLAttributes<HTMLDivElement>,
+      _props: object,
+    ) {
+      return { ...input, [metadata]: "available" };
+    }
+
+    function consume(input: ReturnType<typeof provide>, _props: object) {
+      const { [metadata]: value, ...elementProps } = input;
+      return { ...elementProps, "data-metadata": value };
+    }
+
+    expect(
+      renderToStaticMarkup(<traits.div of={[{ provide }, { consume }]} />),
+    ).toBe('<div data-metadata="available"></div>');
+  });
+
+  it("relies on React to omit final symbol metadata", () => {
+    const metadata = Symbol("metadata");
+
+    function provide(
+      input: React.HTMLAttributes<HTMLDivElement>,
+      _props: object,
+    ) {
+      return { ...input, [metadata]: "internal" };
+    }
+
+    const element = traits.div({ of: [{ provide }] });
+
+    expect(Object.getOwnPropertySymbols(element.props)).toEqual([]);
+    expect(renderToStaticMarkup(element)).toBe("<div></div>");
+  });
+
   it("uses aliases as prop namespaces", () => {
     function marker(
-      input: React.JSX.IntrinsicElements["div"],
+      input: React.HTMLAttributes<HTMLDivElement>,
       props: { value: string },
     ) {
       return { ...input, "data-marker": props.value };
