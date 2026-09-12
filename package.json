@@ -1,7 +1,7 @@
 {
   "name": "jsx-traits",
   "description": "Monorepo for @jsx-traits/* packages",
-  "version": "0.1.0-next.1",
+  "version": "0.1.0-next.2",
   "homepage": "https://jsx-traits.com",
   "private": true,
   "type": "module",
