@@ -42,7 +42,7 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - run: npm run format:check
+      - run: npm exec prettier -- --check .
 
   eslint:
     runs-on: ubuntu-latest
@@ -53,7 +53,7 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - run: npm run lint
+      - run: npm exec eslint -- . --max-warnings=0
 
   typecheck:
     runs-on: ubuntu-latest
@@ -64,7 +64,7 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - run: npm run typecheck
+      - run: npm run typecheck --workspaces --if-present
 
   build:
     runs-on: ubuntu-latest
@@ -75,7 +75,7 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - run: npm run build
+      - run: npm run build --workspaces --if-present
 
   test:
     runs-on: ubuntu-latest
@@ -86,7 +86,7 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - run: npm test
+      - run: npm test --workspaces --if-present
 
   typescript:
     runs-on: ubuntu-latest

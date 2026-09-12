@@ -11,12 +11,6 @@ Use the Node version in `.nvmrc`, then install dependencies:
 npm install
 ```
 
-Run all checks with:
-
-```sh
-npm run verify
-```
-
 Generate API documentation after changing public declarations:
 
 ```sh
