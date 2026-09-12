@@ -14,8 +14,7 @@ type IntrinsicProps<Tag extends IntrinsicTag> =
   React.JSX.IntrinsicElements[Tag];
 type IntrinsicPropKeys<Tag extends IntrinsicTag = IntrinsicTag> =
   Tag extends IntrinsicTag ? keyof IntrinsicProps<Tag> : never;
-type NonEmptyTraitEntries = readonly [TraitEntry, ...TraitEntry[]];
-type TraitEntries = readonly [] | NonEmptyTraitEntries;
+type TraitEntries = readonly [] | readonly [TraitEntry, ...TraitEntry[]];
 type StringKey<Value> = Extract<keyof Value, string>;
 type EntryTrait<Entry> = Entry extends TraitEntry
   ? Entry[StringKey<Entry>]
@@ -63,55 +62,152 @@ type ValidateEntry<Entry> = [keyof Entry] extends [never]
         : unknown
     : never;
 
-type ValidateEntries<Entries extends readonly unknown[]> =
-  Entries extends readonly [infer First, ...infer Rest]
-    ? ValidateEntry<First> & ValidateEntries<Rest>
-    : unknown;
+type RequiredKeys<Value> = Value extends object
+  ? {
+      [Key in keyof Value]-?: object extends Pick<Value, Key> ? never : Key;
+    }[keyof Value]
+  : never;
 
-type ValidateUniqueNamespaces<
-  Entries extends readonly unknown[],
-  Seen extends PropertyKey = never,
-> = Entries extends readonly [infer First, ...infer Rest]
-  ? Extract<keyof First, Seen> extends never
-    ? ValidateUniqueNamespaces<Rest, Seen | keyof First>
-    : never
-  : unknown;
+type IncompatiblePropKeys<From, To> = {
+  [Key in Extract<keyof From, keyof To>]-?: [From[Key]] extends [To[Key]]
+    ? never
+    : Key;
+}[Extract<keyof From, keyof To>];
+
+type InvalidFinalPropKeys<From, To> =
+  | Exclude<keyof From, keyof To | `data-${string}`>
+  | IncompatiblePropKeys<From, To>
+  | Exclude<RequiredKeys<To>, keyof From>;
 
 type StrictPropSubset<From, To> = From extends object
-  ? Exclude<keyof From, keyof To | `data-${string}`> extends never
-    ? [From] extends [To]
-      ? true
+  ? "key" extends keyof From
+    ? false
+    : Exclude<keyof From, keyof To | `data-${string}`> extends never
+      ? [From] extends [To]
+        ? true
+        : false
       : false
-    : false
   : false;
 
+type InvalidInitialInputKeys<From, To> = Extract<
+  Exclude<keyof From, keyof To | `data-${string}`>,
+  IntrinsicPropKeys | RequiredKeys<From>
+>;
+
+type InvalidInitialPropKeys<From, To> =
+  InvalidInitialInputKeys<From, To> | IncompatiblePropKeys<From, To>;
+
 type ValidInitialInput<From, To> = From extends object
-  ? Exclude<keyof From, keyof To | `data-${string}`> extends infer ExtraKeys
-    ? Extract<ExtraKeys, IntrinsicPropKeys> extends never
+  ? "key" extends keyof From
+    ? false
+    : InvalidInitialInputKeys<From, To> extends never
       ? [Pick<From, Extract<keyof From, keyof To>>] extends [
           Pick<To, Extract<keyof From, keyof To>>,
         ]
         ? true
         : false
       : false
-    : false
   : false;
 
-type ValidateChain<
-  Entries extends TraitEntries,
-  FinalProps,
-> = Entries extends readonly [infer Current, infer Next, ...infer Rest]
-  ? [TraitOutput<EntryTrait<Current>>] extends [TraitInput<EntryTrait<Next>>]
-    ? ValidateChain<
-        readonly [Extract<Next, TraitEntry>, ...Extract<Rest, TraitEntry[]>],
-        FinalProps
-      >
-    : never
-  : Entries extends readonly [infer Last]
-    ? StrictPropSubset<TraitOutput<EntryTrait<Last>>, FinalProps> extends true
-      ? unknown
-      : never
-    : unknown;
+type TraitValidationError<Message extends string> = {
+  readonly [Error in `JSX Traits error: ${Message}`]: never;
+};
+
+type FinalEntryError<
+  Tag extends IntrinsicTag,
+  Entry,
+  InvalidProp extends string = Extract<
+    InvalidFinalPropKeys<TraitOutput<EntryTrait<Entry>>, IntrinsicProps<Tag>>,
+    string
+  >,
+> = "key" extends keyof TraitOutput<EntryTrait<Entry>>
+  ? TraitValidationError<`Trait "${StringKey<Entry>}" cannot return React's reserved "key" prop`>
+  : [InvalidProp] extends [never]
+    ? TraitValidationError<`Trait "${StringKey<Entry>}" does not return valid <${Extract<Tag, string>}> props`>
+    : TraitValidationError<`Trait "${StringKey<Entry>}" returns invalid <${Extract<Tag, string>}> prop "${InvalidProp}"`>;
+
+type FinalEntryValidation<
+  Tag extends IntrinsicTag,
+  Entry,
+  Rest extends readonly unknown[],
+> = Rest extends readonly []
+  ? StrictPropSubset<
+      TraitOutput<EntryTrait<Entry>>,
+      IntrinsicProps<Tag>
+    > extends true
+    ? unknown
+    : FinalEntryError<Tag, Entry>
+  : unknown;
+
+type InitialEntryError<
+  Tag extends IntrinsicTag,
+  Entry,
+  InvalidProp extends string = Extract<
+    InvalidInitialPropKeys<TraitInput<EntryTrait<Entry>>, IntrinsicProps<Tag>>,
+    string
+  >,
+> = "key" extends keyof TraitInput<EntryTrait<Entry>>
+  ? TraitValidationError<`Trait "${StringKey<Entry>}" cannot accept React's reserved "key" prop as initial input`>
+  : [InvalidProp] extends [never]
+    ? TraitValidationError<`Trait "${StringKey<Entry>}" cannot accept initial <${Extract<Tag, string>}> props`>
+    : TraitValidationError<`Trait "${StringKey<Entry>}" cannot accept initial <${Extract<Tag, string>}> prop "${InvalidProp}"`>;
+
+type EntryBoundaryValidation<
+  Tag extends IntrinsicTag,
+  Entry,
+  Rest extends readonly unknown[],
+  PreviousOutput,
+  IsFirst extends boolean,
+> = IsFirst extends true
+  ? ValidInitialInput<
+      TraitInput<EntryTrait<Entry>>,
+      IntrinsicProps<Tag>
+    > extends true
+    ? FinalEntryValidation<Tag, Entry, Rest>
+    : InitialEntryError<Tag, Entry>
+  : [PreviousOutput] extends [TraitInput<EntryTrait<Entry>>]
+    ? FinalEntryValidation<Tag, Entry, Rest>
+    : TraitValidationError<`Trait "${StringKey<Entry>}" cannot accept the previous trait's output`>;
+
+type PipelineEntryValidation<
+  Tag extends IntrinsicTag,
+  Entry,
+  Rest extends readonly unknown[],
+  Seen extends PropertyKey,
+  PreviousOutput,
+  IsFirst extends boolean,
+> = [ValidateEntry<Entry>] extends [never]
+  ? TraitValidationError<"A pipeline entry must contain exactly one trait">
+  : Extract<keyof Entry, Seen> extends never
+    ? EntryBoundaryValidation<Tag, Entry, Rest, PreviousOutput, IsFirst>
+    : TraitValidationError<`Trait namespace "${Extract<StringKey<Entry>, Seen>}" is duplicated`>;
+
+type ValidatePipeline<
+  Tag extends IntrinsicTag,
+  Entries extends readonly unknown[],
+  Seen extends PropertyKey = never,
+  PreviousOutput = unknown,
+  IsFirst extends boolean = true,
+> = Entries extends readonly [infer Entry, ...infer Rest]
+  ? readonly [
+      Entry &
+        PipelineEntryValidation<
+          Tag,
+          Entry,
+          Rest,
+          Seen,
+          PreviousOutput,
+          IsFirst
+        >,
+      ...ValidatePipeline<
+        Tag,
+        Rest,
+        Seen | keyof Entry,
+        TraitOutput<EntryTrait<Entry>>,
+        false
+      >,
+    ]
+  : readonly [];
 
 type InitialInput<Entries extends TraitEntries> = Entries extends readonly [
   infer First,
@@ -120,31 +216,23 @@ type InitialInput<Entries extends TraitEntries> = Entries extends readonly [
   ? TraitInput<EntryTrait<First>>
   : unknown;
 
-type ValidateInitialInput<
-  Entries extends TraitEntries,
-  IntrinsicProps,
-> = Entries extends readonly [infer First, ...unknown[]]
-  ? ValidInitialInput<
-      TraitInput<EntryTrait<First>>,
-      IntrinsicProps
-    > extends true
-    ? unknown
-    : never
-  : unknown;
+type InitialPropKeys<Tag extends IntrinsicTag> =
+  Exclude<keyof IntrinsicProps<Tag>, "key"> | `data-${string}`;
+
+type InitialTraitProps<Tag extends IntrinsicTag, Entries extends TraitEntries> =
+  InitialInput<Entries> extends infer Input extends object
+    ? Pick<Input, Extract<keyof Input, InitialPropKeys<Tag>>>
+    : object;
 
 type TraitElementProps<
   Tag extends IntrinsicTag,
   Entries extends TraitEntries,
 > = {
-  of: Entries &
-    ValidateEntries<Entries> &
-    ValidateUniqueNamespaces<Entries> &
-    ValidateInitialInput<Entries, IntrinsicProps<Tag>> &
-    ValidateChain<Entries, IntrinsicProps<Tag>>;
+  of: Entries & NoInfer<ValidatePipeline<Tag, Entries>>;
 } & PipelineTraitProps<Entries> &
   Omit<
-    IntrinsicProps<Tag> & InitialInput<Entries>,
-    "of" | keyof PipelineTraitProps<Entries>
+    IntrinsicProps<Tag> & InitialTraitProps<Tag, Entries>,
+    "key" | "of" | keyof PipelineTraitProps<Entries>
   >;
 
 type TraitElement<Tag extends IntrinsicTag> = <

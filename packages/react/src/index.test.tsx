@@ -65,7 +65,7 @@ describe("traits", () => {
 
   it("uses aliases as prop namespaces", () => {
     function marker(
-      input: React.JSX.IntrinsicElements["div"],
+      input: React.HTMLAttributes<HTMLDivElement>,
       props: { value: string },
     ) {
       return { ...input, "data-marker": props.value };

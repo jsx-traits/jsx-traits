@@ -19,7 +19,7 @@ intrinsic element:
 import { traits } from "@jsx-traits/react";
 
 function labelled(
-  input: React.JSX.IntrinsicElements["button"],
+  input: React.ButtonHTMLAttributes<HTMLButtonElement>,
   options: { label: string },
 ) {
   return { ...input, "aria-label": options.label };
