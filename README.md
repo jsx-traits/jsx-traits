@@ -3,9 +3,9 @@
 </div>
 
 <div align="center" id="badges">
-  <a href="https://github.com/jsx-traits/jsx-traits/tree/v0.1.0-next.4"><img src="https://img.shields.io/badge/tag-v0.1.0--next.4-7c3aed" alt="tag v0.1.0-next.4"></a>
-  <a href="https://www.npmjs.com/package/@jsx-traits/react/v/0.1.0-next.4"><img src="https://img.shields.io/npm/v/@jsx-traits/react/latest.svg?label=npm&color=7c3aed" alt="npm version"></a>
-  <a href="https://github.com/jsx-traits/jsx-traits/blob/v0.1.0-next.4/LICENSE"><img src="https://img.shields.io/badge/license-MIT-7c3aed" alt="license"></a>
+  <a href="https://github.com/jsx-traits/jsx-traits/tree/v0.1.0"><img src="https://img.shields.io/badge/tag-v0.1.0-2563eb" alt="tag v0.1.0"></a>
+  <a href="https://www.npmjs.com/package/@jsx-traits/react/v/0.1.0"><img src="https://img.shields.io/npm/v/@jsx-traits/react/latest.svg?label=npm&color=2563eb" alt="npm version"></a>
+  <a href="https://github.com/jsx-traits/jsx-traits/blob/v0.1.0/LICENSE"><img src="https://img.shields.io/badge/license-MIT-2563eb" alt="license"></a>
 </div>
 
 JSX Traits provides ordered, typed behavior composition directly on React
