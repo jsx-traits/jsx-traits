@@ -78,23 +78,35 @@ type ValidateUniqueNamespaces<
   : unknown;
 
 type StrictPropSubset<From, To> = From extends object
-  ? Exclude<keyof From, keyof To | `data-${string}`> extends never
-    ? [From] extends [To]
-      ? true
-      : false
-    : false
-  : false;
-
-type ValidInitialInput<From, To> = From extends object
-  ? Exclude<keyof From, keyof To | `data-${string}`> extends infer ExtraKeys
-    ? Extract<ExtraKeys, IntrinsicPropKeys> extends never
-      ? [Pick<From, Extract<keyof From, keyof To>>] extends [
-          Pick<To, Extract<keyof From, keyof To>>,
-        ]
+  ? "key" extends keyof From
+    ? false
+    : Exclude<keyof From, keyof To | `data-${string}`> extends never
+      ? [From] extends [To]
         ? true
         : false
       : false
-    : false
+  : false;
+
+type RequiredKeys<Value> = Value extends object
+  ? {
+      [Key in keyof Value]-?: object extends Pick<Value, Key> ? never : Key;
+    }[keyof Value]
+  : never;
+
+type ValidInitialInput<From, To> = From extends object
+  ? "key" extends keyof From
+    ? false
+    : Exclude<keyof From, keyof To | `data-${string}`> extends infer ExtraKeys
+      ? Extract<ExtraKeys, IntrinsicPropKeys> extends never
+        ? Extract<ExtraKeys, RequiredKeys<From>> extends never
+          ? [Pick<From, Extract<keyof From, keyof To>>] extends [
+              Pick<To, Extract<keyof From, keyof To>>,
+            ]
+            ? true
+            : false
+          : false
+        : false
+      : false
   : false;
 
 type ValidateChain<
@@ -120,6 +132,14 @@ type InitialInput<Entries extends TraitEntries> = Entries extends readonly [
   ? TraitInput<EntryTrait<First>>
   : unknown;
 
+type InitialPropKeys<Tag extends IntrinsicTag> =
+  Exclude<keyof IntrinsicProps<Tag>, "key"> | `data-${string}`;
+
+type InitialTraitProps<Tag extends IntrinsicTag, Entries extends TraitEntries> =
+  InitialInput<Entries> extends infer Input extends object
+    ? Pick<Input, Extract<keyof Input, InitialPropKeys<Tag>>>
+    : object;
+
 type ValidateInitialInput<
   Entries extends TraitEntries,
   IntrinsicProps,
@@ -143,7 +163,7 @@ type TraitElementProps<
     ValidateChain<Entries, IntrinsicProps<Tag>>;
 } & PipelineTraitProps<Entries> &
   Omit<
-    IntrinsicProps<Tag> & InitialInput<Entries>,
+    Omit<IntrinsicProps<Tag>, "key"> & InitialTraitProps<Tag, Entries>,
     "of" | keyof PipelineTraitProps<Entries>
   >;
 

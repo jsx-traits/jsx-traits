@@ -21,4 +21,6 @@ namespaced props, then returns the value passed to the next trait.
 ```
 
 Array order is execution order. JSX namespaces isolate each trait's options, and
-TypeScript checks the handoff between adjacent traits.
+TypeScript checks the handoff between adjacent traits. Unnamespaced intrinsic
+props form the pipeline's initial value; React's reserved `key` is not passed to
+the first trait.

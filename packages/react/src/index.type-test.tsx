@@ -77,7 +77,7 @@ function incompatible(
 const invalidChain = <traits.a of={[{ button }, { incompatible }]} button:variant="primary" />;
 
 function leaksContext(
-  input: React.JSX.IntrinsicElements["a"],
+  input: React.AnchorHTMLAttributes<HTMLAnchorElement>,
   _props: object,
 ) {
   return { ...input, internalContext: true };
@@ -120,6 +120,58 @@ function addsRef(input: React.HTMLAttributes<HTMLElement>, _props: object) {
 
 const reusableHtmlRef = <traits.span of={[{ addsRef }]} />;
 
+function acceptsOptionalContext(
+  input: React.HTMLAttributes<HTMLElement> & {
+    pipelineContext?: string;
+  },
+  _props: object,
+) {
+  const { pipelineContext: _pipelineContext, ...elementProps } = input;
+  return elementProps;
+}
+
+const optionalContextNotRequired = (
+  <traits.div of={[{ acceptsOptionalContext }]} />
+);
+
+// @ts-expect-error Internal pipeline context is not an intrinsic root prop.
+const invalidOptionalContextProp = <traits.div of={[{ acceptsOptionalContext }]} pipelineContext="test" />;
+
+function requiresCustomInput(
+  _input: { pipelineContext: string },
+  _props: object,
+) {
+  return {};
+}
+
+// @ts-expect-error A required custom input cannot be provided as a root prop.
+const invalidRequiredCustomInput = <traits.div of={[{ requiresCustomInput }]} />;
+
+function acceptsKey(_input: { key?: React.Key }, _props: object) {
+  return {};
+}
+
+// @ts-expect-error React does not pass key to the first trait input.
+const invalidKeyInput = <traits.div of={[{ acceptsKey }]} />;
+
+function addsKey(input: React.HTMLAttributes<HTMLElement>, _props: object) {
+  return { ...input, key: "internal" };
+}
+
+// @ts-expect-error The final trait cannot return React's reserved key.
+const invalidFinalKey = <traits.div of={[{ addsKey }]} />;
+
+function removesKey(input: ReturnType<typeof addsKey>, _props: object) {
+  const { key: _key, ...elementProps } = input;
+  return elementProps;
+}
+
+const consumedIntermediateKey = (
+  <traits.div of={[{ addsKey }, { removesKey }]} />
+);
+
+const keyedElement = <traits.div of={[]} key="identity" />;
+
 // @ts-expect-error src is not a valid anchor or first-trait input prop.
 const invalidIntrinsicProp = <traits.a of={[{ button }, { tooltip }]} button:variant="primary" tooltip:content="Details" src="image.png" />;
 
@@ -138,5 +190,12 @@ void [
   missingInitialInput,
   invalidInitialInputTag,
   reusableHtmlRef,
+  optionalContextNotRequired,
+  invalidOptionalContextProp,
+  invalidRequiredCustomInput,
+  invalidKeyInput,
+  invalidFinalKey,
+  consumedIntermediateKey,
+  keyedElement,
   invalidIntrinsicProp,
 ];
