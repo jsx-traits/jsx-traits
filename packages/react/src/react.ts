@@ -75,14 +75,14 @@ type IncompatiblePropKeys<From, To> = {
 }[Extract<keyof From, keyof To>];
 
 type InvalidFinalPropKeys<From, To> =
-  | Exclude<keyof From, keyof To | `data-${string}`>
+  | Exclude<keyof From, symbol | keyof To | `data-${string}`>
   | IncompatiblePropKeys<From, To>
   | Exclude<RequiredKeys<To>, keyof From>;
 
 type StrictPropSubset<From, To> = From extends object
   ? "key" extends keyof From
     ? false
-    : Exclude<keyof From, keyof To | `data-${string}`> extends never
+    : Exclude<keyof From, symbol | keyof To | `data-${string}`> extends never
       ? [From] extends [To]
         ? true
         : false

@@ -86,6 +86,29 @@ function leaksContext(
 // @ts-expect-error Final context cannot leak to the intrinsic element.
 const invalidFinalOutput = <traits.a of={[{ leaksContext }]} />;
 
+const traitMetadata: unique symbol = Symbol("trait metadata");
+
+function addsMetadata(
+  input: React.HTMLAttributes<HTMLElement>,
+  _props: object,
+) {
+  return { ...input, [traitMetadata]: { color: "violet" } };
+}
+
+const finalSymbolMetadata = <traits.div of={[{ addsMetadata }]} />;
+
+function consumesMetadata(
+  input: ReturnType<typeof addsMetadata>,
+  _props: object,
+) {
+  const { [traitMetadata]: metadata, ...elementProps } = input;
+  return { ...elementProps, "data-color": metadata.color };
+}
+
+const consumedSymbolMetadata = (
+  <traits.div of={[{ addsMetadata }, { consumesMetadata }]} />
+);
+
 function requiresHref(
   input: { href: string },
   _props: object,
@@ -186,6 +209,8 @@ void [
   duplicateNamespace,
   invalidChain,
   invalidFinalOutput,
+  finalSymbolMetadata,
+  consumedSymbolMetadata,
   requiredInitialInput,
   missingInitialInput,
   invalidInitialInputTag,
